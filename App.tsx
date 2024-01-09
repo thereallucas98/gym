@@ -1,6 +1,6 @@
 import { NativeBaseProvider } from 'native-base'
 
-import { Loading } from '~/components/Loading'
+import { Loading } from '~/components/loading'
 import useLoadFonts from '~/hooks/useLoadFonts'
 import { Routes } from '~/routes'
 import { THEME } from '~/styles/theme'

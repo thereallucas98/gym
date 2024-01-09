@@ -1,13 +1,23 @@
 import { useNavigation } from '@react-navigation/native'
-import { Center, Heading, Image, ScrollView, Text, VStack } from 'native-base'
+import { Dumbbell } from 'lucide-react-native'
+import {
+  Center,
+  Heading,
+  HStack,
+  Image,
+  ScrollView,
+  Text,
+  useTheme,
+  VStack,
+} from 'native-base'
 
 import BackgroundImg from '~/assets/background.png'
-import GymImg from '~/assets/logo.svg'
-import { Button } from '~/components/Button'
-import { Input } from '~/components/Input'
+import { Button } from '~/components/button'
+import { Input } from '~/components/input'
 
 export function SignUp() {
   const navigation = useNavigation()
+  const theme = useTheme()
 
   function handleGoBack() {
     navigation.goBack()
@@ -28,7 +38,12 @@ export function SignUp() {
         />
 
         <Center my={24}>
-          <GymImg />
+          <HStack alignItems="center" justifyContent="center" space={4}>
+            <Dumbbell size={32} color={theme.colors.green[700]} />
+            <Heading color="gray.100" fontSize="3xl" fontWeight={700}>
+              Gym
+            </Heading>
+          </HStack>
 
           <Text color="gray.100" fontSize="sm">
             Treine sua mente e o seu corpo.
