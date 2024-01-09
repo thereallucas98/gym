@@ -2,7 +2,7 @@ import { NativeBaseProvider } from 'native-base'
 
 import { Loading } from '~/components/Loading'
 import useLoadFonts from '~/hooks/useLoadFonts'
-import { SignIn } from '~/screens/sign-in'
+import { Routes } from '~/routes'
 import { THEME } from '~/styles/theme'
 
 export default function App() {
@@ -10,7 +10,7 @@ export default function App() {
 
   return (
     <NativeBaseProvider theme={THEME}>
-      {!fontsLoaded ? <Loading /> : <SignIn />}
+      {!fontsLoaded ? <Loading /> : <Routes />}
     </NativeBaseProvider>
   )
 }
