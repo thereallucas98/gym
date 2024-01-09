@@ -8,15 +8,25 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "tsc --noEmit && eslint src/**/*.{ts,tsx} --max-warnings=0",
-    "lint-fix": "eslint --fix src",
     "prettier-format": "yarn prettier --config .prettierrc --write src",
-    "lint-check": "eslint src --max-warnings=0"
+    "lint-fix": "eslint --fix src",
+    "lint-check": "eslint src --max-warnings=0",
+    "prettier-check": "prettier --check src",
+    "check-types": "npx tsc --project ./tsconfig.json --noemit && echo 'Types are valid ✔︎'",
+    "pre-push": "npm run prettier-check && npm run lint-check && npm run check-types &&  npm build",
+    "prepare": "husky install"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx}": [
       "npm run prettier-format",
       "npm run lint-fix"
     ]
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "npm run prettier-format && npm run lint-fix && npm run check-types",
+      "pre-push": "npm run prettier-check && npm run lint-check && npm run check-types"
+    }
   },
   "dependencies": {
     "@expo-google-fonts/roboto": "^0.2.3",
@@ -35,6 +45,8 @@
     "@rocketseat/eslint-config": "^2.1.0",
     "@types/react": "~18.2.14",
     "babel-plugin-module-resolver": "^5.0.0",
+    "eslint-plugin-simple-import-sort": "^10.0.0",
+    "husky": "^8.0.3",
     "typescript": "^5.1.3"
   },
   "private": true
