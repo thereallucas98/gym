@@ -1,8 +1,8 @@
 /* eslint-disable camelcase */
 import {
-  useFonts,
   Roboto_400Regular,
   Roboto_700Bold,
+  useFonts,
 } from '@expo-google-fonts/roboto'
 
 const useLoadFonts = () => {
