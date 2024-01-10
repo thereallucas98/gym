@@ -13,9 +13,9 @@ import { useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 
 import { Button } from '~/components/button'
+import { Input } from '~/components/form/input'
 import { ScreenHeader } from '~/components/header/screen-header'
 import { UserPhoto } from '~/components/header/user-photo'
-import { Input } from '~/components/input'
 
 const PHOTO_SIZE = 33
 
@@ -106,7 +106,13 @@ export function Profile() {
         </Center>
 
         <Center px={10} mt={12} mb={9}>
-          <Heading color="gray.200" alignSelf="flex-start" fontSize="md" mb={2}>
+          <Heading
+            color="gray.200"
+            alignSelf="flex-start"
+            fontSize="md"
+            mb={2}
+            fontFamily="heading"
+          >
             Alterar senha
           </Heading>
 

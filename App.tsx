@@ -1,3 +1,4 @@
+import { StatusBar } from 'expo-status-bar'
 import { NativeBaseProvider } from 'native-base'
 
 import { Loading } from '~/components/loading'
@@ -10,6 +11,7 @@ export default function App() {
 
   return (
     <NativeBaseProvider theme={THEME}>
+      <StatusBar style="light" />
       {!fontsLoaded ? <Loading /> : <Routes />}
     </NativeBaseProvider>
   )

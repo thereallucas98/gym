@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigation } from '@react-navigation/native'
 import { Dumbbell } from 'lucide-react-native'
 import {
@@ -10,18 +11,50 @@ import {
   useTheme,
   VStack,
 } from 'native-base'
+import { Controller, useForm } from 'react-hook-form'
+import { z } from 'zod'
 
 import BackgroundImg from '~/assets/background.png'
 import { Button } from '~/components/button'
-import { Input } from '~/components/input'
+import { Input } from '~/components/form/input'
+
+const signUpSchema = z
+  .object({
+    name: z.string().min(5, { message: 'O campo é obrigatório' }),
+    email: z.string().email({ message: 'Email inválido' }),
+    password: z.string().min(5, { message: 'A senha deve ter 6 caracteres' }),
+    password_confirm: z
+      .string()
+      .min(5, { message: 'A senha deve ter 6 caracteres' }),
+  })
+  .refine((v) => v.password === v.password_confirm, {
+    path: ['password_confirm'],
+    message: 'Senhas não são iguais',
+  })
+
+type SignUpInputs = z.infer<typeof signUpSchema>
 
 export function SignUp() {
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignUpInputs>({
+    resolver: zodResolver(signUpSchema),
+    mode: 'onChange',
+  })
   const navigation = useNavigation()
   const theme = useTheme()
 
   function handleGoBack() {
     navigation.goBack()
   }
+
+  function handleSignUp(data: SignUpInputs) {
+    console.log(data)
+  }
+
+  console.log('errors', errors)
 
   return (
     <ScrollView
@@ -55,22 +88,73 @@ export function SignUp() {
             Crie sua conta
           </Heading>
 
-          <Input placeholder="Nome" />
-
-          <Input
-            placeholder="E-mail"
-            keyboardType="email-address"
-            autoCapitalize="none"
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Nome"
+                onChangeText={onChange}
+                value={value}
+                error={errors?.name}
+              />
+            )}
           />
-          <Input placeholder="Senha" secureTextEntry />
 
-          <Button title="Criar e acessar" />
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="E-mail"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onChangeText={onChange}
+                value={value}
+                error={errors?.email}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                error={errors?.password}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="password_confirm"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Confirmar a Senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value}
+                onSubmitEditing={handleSubmit(handleSignUp)}
+                returnKeyType="send"
+                error={errors?.password_confirm}
+              />
+            )}
+          />
+
+          <Button
+            title="Criar e acessar"
+            onPress={handleSubmit(handleSignUp)}
+          />
         </Center>
 
         <Button
           title="Voltar para o login"
           variant="outline"
-          mt="auto"
+          mt={12}
           onPress={handleGoBack}
         />
       </VStack>

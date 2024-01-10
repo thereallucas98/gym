@@ -13,7 +13,7 @@ import {
 
 import BackgroundImg from '~/assets/background.png'
 import { Button } from '~/components/button'
-import { Input } from '~/components/input'
+import { Input } from '~/components/form/input'
 import { AuthNavigatorRoutesProps } from '~/routes/auth.routes'
 
 export function SignIn() {
