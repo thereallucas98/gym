@@ -9,6 +9,7 @@ import {
   ScrollView,
   Text,
   useTheme,
+  useToast,
   VStack,
 } from 'native-base'
 import { Controller, useForm } from 'react-hook-form'
@@ -38,12 +39,14 @@ export function SignUp() {
   const {
     control,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<SignUpInputs>({
     resolver: zodResolver(signUpSchema),
     mode: 'onChange',
   })
   const navigation = useNavigation()
+  const toast = useToast()
   const theme = useTheme()
 
   function handleGoBack() {
@@ -51,10 +54,39 @@ export function SignUp() {
   }
 
   function handleSignUp(data: SignUpInputs) {
-    console.log(data)
-  }
+    const { name, email, password } = data
 
-  console.log('errors', errors)
+    console.log('name', name)
+
+    fetch('http://192.168.0.6:3333/users', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    })
+      .then((response) => response.json())
+      .then(() => {
+        toast.show({
+          title: 'Seu cadastro foi realizado com sucesso.',
+          placement: 'top',
+          bgColor: 'green.500',
+        })
+        navigation.goBack()
+      })
+      .catch((err) => {
+        toast.show({
+          title: 'Algo deu errado. Fale com o suporte.',
+          placement: 'top',
+          bgColor: 'red.500',
+        })
+        console.log('error', err)
+      })
+      .finally(() => {
+        reset()
+      })
+  }
 
   return (
     <ScrollView
