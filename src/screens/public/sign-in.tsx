@@ -11,12 +11,14 @@ import {
   useTheme,
   VStack,
 } from 'native-base'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
 import BackgroundImg from '~/assets/background.png'
 import { Button } from '~/components/button'
 import { Input } from '~/components/form/input'
+import { useAuth } from '~/hooks/use-auth'
 import { AuthNavigatorRoutesProps } from '~/routes/auth.routes'
 
 const signInSchema = z.object({
@@ -27,6 +29,9 @@ const signInSchema = z.object({
 type SignInInputs = z.infer<typeof signInSchema>
 
 export function SignIn() {
+  const [isLoading, setIsLoading] = useState(false)
+
+  const { signIn } = useAuth()
   const {
     control,
     handleSubmit,
@@ -43,7 +48,15 @@ export function SignIn() {
   }
 
   function handleSignIn(data: SignInInputs) {
-    console.log(data)
+    const { email, password } = data
+    try {
+      setIsLoading(true)
+
+      signIn(email, password)
+    } catch (error) {
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -118,6 +131,7 @@ export function SignIn() {
         </Center>
 
         <Button
+          isLoading={isLoading}
           title="Criar Conta"
           variant="outline"
           onPress={handleNewAccount}

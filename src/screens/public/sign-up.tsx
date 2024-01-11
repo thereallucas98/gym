@@ -13,6 +13,7 @@ import {
   useToast,
   VStack,
 } from 'native-base'
+import { useState } from 'react'
 import { Controller, useForm } from 'react-hook-form'
 import { z } from 'zod'
 
@@ -38,6 +39,8 @@ const signUpSchema = z
 type SignUpInputs = z.infer<typeof signUpSchema>
 
 export function SignUp() {
+  const [isLoading, setIsLoading] = useState(false)
+
   const {
     control,
     handleSubmit,
@@ -59,6 +62,7 @@ export function SignUp() {
     const { name, email, password } = data
 
     try {
+      setIsLoading(true)
       await api.post('/users', { name, email, password })
 
       toast.show({
@@ -79,6 +83,7 @@ export function SignUp() {
       }
     } finally {
       reset()
+      setIsLoading(false)
     }
   }
 
@@ -178,6 +183,7 @@ export function SignUp() {
         </Center>
 
         <Button
+          isLoading={isLoading}
           title="Voltar para o login"
           variant="outline"
           mt={12}
