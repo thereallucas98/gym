@@ -1,5 +1,6 @@
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useNavigation } from '@react-navigation/native'
+import axios from 'axios'
 import { Dumbbell } from 'lucide-react-native'
 import {
   Center,
@@ -18,6 +19,7 @@ import { z } from 'zod'
 import BackgroundImg from '~/assets/background.png'
 import { Button } from '~/components/button'
 import { Input } from '~/components/form/input'
+import { api } from '~/lib/axios'
 
 const signUpSchema = z
   .object({
@@ -53,39 +55,31 @@ export function SignUp() {
     navigation.goBack()
   }
 
-  function handleSignUp(data: SignUpInputs) {
+  async function handleSignUp(data: SignUpInputs) {
     const { name, email, password } = data
 
-    console.log('name', name)
+    try {
+      await api.post('/users', { name, email, password })
 
-    fetch('http://192.168.0.6:3333/users', {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ name, email, password }),
-    })
-      .then((response) => response.json())
-      .then(() => {
-        toast.show({
-          title: 'Seu cadastro foi realizado com sucesso.',
-          placement: 'top',
-          bgColor: 'green.500',
-        })
-        navigation.goBack()
+      toast.show({
+        title: 'Seu cadastro foi realizado com sucesso.',
+        placement: 'top',
+        bgColor: 'green.500',
       })
-      .catch((err) => {
+
+      navigation.goBack()
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
         toast.show({
           title: 'Algo deu errado. Fale com o suporte.',
+          description: error.response?.data.message,
           placement: 'top',
           bgColor: 'red.500',
         })
-        console.log('error', err)
-      })
-      .finally(() => {
-        reset()
-      })
+      }
+    } finally {
+      reset()
+    }
   }
 
   return (
