@@ -1,4 +1,5 @@
-import { useNavigation } from '@react-navigation/native'
+/* eslint-disable react-hooks/exhaustive-deps */
+import { useNavigation, useRoute } from '@react-navigation/native'
 import { ChevronLeft } from 'lucide-react-native'
 import {
   Box,
@@ -8,22 +9,69 @@ import {
   ScrollView,
   Text,
   useTheme,
+  useToast,
   VStack,
 } from 'native-base'
+import { useEffect, useState } from 'react'
 import { TouchableOpacity } from 'react-native'
 
 import BodySvg from '~/assets/body.svg'
 import RepetitionsSvg from '~/assets/repetitions.svg'
 import SeriesSvg from '~/assets/series.svg'
 import { Button } from '~/components/button'
+import { Loading } from '~/components/loading'
+import { ExerciseDTO } from '~/dtos/exercise-dto'
+import { api } from '~/lib/axios'
 import { AppNavigatorRoutesProps } from '~/routes/app.routes'
+import { AppError } from '~/utils/app-error'
+
+type ExerciseRouteParamsProps = {
+  exerciseId: string
+}
 
 export function Exercise() {
+  const [isLoading, setIsLoading] = useState(true)
+  const [exercise, setExercise] = useState<ExerciseDTO>({} as ExerciseDTO)
+
   const navigation = useNavigation<AppNavigatorRoutesProps>()
+  const route = useRoute()
+  const toast = useToast()
   const { colors } = useTheme()
+
+  const { exerciseId } = route.params as ExerciseRouteParamsProps
 
   function handleGoBack() {
     navigation.goBack()
+  }
+
+  async function fetchExerciseDetails() {
+    try {
+      setIsLoading(true)
+      const response = await api.get(`/exercises/${exerciseId}`)
+
+      setExercise(response.data)
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      const title = isAppError
+        ? error.message
+        : 'Não foi possível carregar os detalhes do exercício'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchExerciseDetails()
+  }, [exerciseId])
+
+  if (isLoading) {
+    return <Loading />
   }
 
   return (
@@ -45,12 +93,12 @@ export function Exercise() {
             flexShrink={1}
             fontFamily="heading"
           >
-            Puxada frontal
+            {exercise.name}
           </Heading>
           <HStack alignItems="center">
             <BodySvg />
             <Text color="gray.200" ml={1} textTransform="capitalize">
-              Costas
+              {exercise.group}
             </Text>
           </HStack>
         </HStack>
@@ -58,17 +106,19 @@ export function Exercise() {
 
       <ScrollView>
         <VStack p={8}>
-          <Image
-            w="full"
-            h={80}
-            source={{
-              uri: 'http://conteudo.imguol.com.br/c/entretenimento/0c/2019/12/03/remada-unilateral-com-halteres-1575402100538_v2_600x600.jpg',
-            }}
-            alt="Exercício"
-            mb={3}
-            resizeMode="cover"
-            rounded="lg"
-          />
+          <Box rounded="lg" mb="3" overflow="hidden">
+            <Image
+              w="full"
+              h={80}
+              source={{
+                uri: `${api.defaults.baseURL}/exercise/demo/${exercise?.demo}`,
+              }}
+              alt="Exercício"
+              mb={3}
+              resizeMode="cover"
+              rounded="lg"
+            />
+          </Box>
 
           <Box bg="gray.600" rounded="md" pb={4} px={4}>
             <HStack
@@ -80,14 +130,14 @@ export function Exercise() {
               <HStack>
                 <SeriesSvg />
                 <Text color="gray.200" ml={2}>
-                  3 séries
+                  {exercise.series} séries
                 </Text>
               </HStack>
 
               <HStack>
                 <RepetitionsSvg />
                 <Text color="gray.200" ml={2}>
-                  12 repetições
+                  {exercise.repetitions} repetições
                 </Text>
               </HStack>
             </HStack>
