@@ -1,3 +1,4 @@
+import { zodResolver } from '@hookform/resolvers/zod'
 import * as FileSystem from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
 import {
@@ -10,21 +11,69 @@ import {
   VStack,
 } from 'native-base'
 import { useState } from 'react'
+import { Controller, useForm } from 'react-hook-form'
 import { TouchableOpacity } from 'react-native'
+import { z } from 'zod'
 
 import { Button } from '~/components/button'
 import { Input } from '~/components/form/input'
 import { ScreenHeader } from '~/components/header/screen-header'
 import { UserPhoto } from '~/components/header/user-photo'
+import { useAuth } from '~/hooks/use-auth'
+import { api } from '~/lib/axios'
+import { AppError } from '~/utils/app-error'
 
 const PHOTO_SIZE = 33
+
+const profileSchema = z
+  .object({
+    name: z.string().min(5, { message: 'O campo é obrigatório' }),
+    email: z.string().email({ message: 'Email inválido' }),
+    old_password: z
+      .string()
+      .min(5, { message: 'A senha deve ter 6 caracteres' })
+      .nullish()
+      .transform((value) => value || null),
+    password: z
+      .string()
+      .min(5, { message: 'A senha deve ter 6 caracteres' })
+      .nullish()
+      .transform((value) => value || null),
+    confirm_password: z
+      .string()
+      .min(5, { message: 'A senha deve ter 6 caracteres' })
+      .nullish()
+      .transform((value) => value || null),
+  })
+  .refine((v) => v.password === v.confirm_password, {
+    path: ['confirm_password'],
+    message: 'Senhas não são iguais',
+  })
+
+type ProfileInputs = z.infer<typeof profileSchema>
 
 export function Profile() {
   const [isLoading, setIsLoading] = useState(false)
   const [userPhoto, setUserPhoto] = useState(
     'https://github.com/thereallucas98.png',
   )
+
+  const { user, updatedUserProfile } = useAuth()
   const toast = useToast()
+
+  const {
+    control,
+    handleSubmit,
+    reset,
+    formState: { errors },
+  } = useForm<ProfileInputs>({
+    resolver: zodResolver(profileSchema),
+    mode: 'onChange',
+    defaultValues: {
+      name: user?.name,
+      email: user?.email,
+    },
+  })
 
   async function handleUserPhotoSelected() {
     try {
@@ -68,6 +117,39 @@ export function Profile() {
     }
   }
 
+  async function handleUpdateProfile(data: ProfileInputs) {
+    console.log('data', data)
+    try {
+      setIsLoading(true)
+      const userData = user
+      userData.name = data.name
+
+      await api.put('/users', data)
+      updatedUserProfile(userData)
+
+      toast.show({
+        title: 'Perfil atualizado com sucesso!',
+        placement: 'top',
+        bgColor: 'green.500',
+      })
+    } catch (error) {
+      const isAppError = error instanceof AppError
+      console.log('error', error)
+      const title = isAppError
+        ? error.message
+        : 'Não foi possível atualizar os dados. Tente novamente mais tarde.'
+
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      reset()
+      setIsLoading(false)
+    }
+  }
+
   return (
     <VStack flex={1}>
       <ScreenHeader title="Perfil" />
@@ -101,8 +183,33 @@ export function Profile() {
             </Text>
           </TouchableOpacity>
 
-          <Input bg="gray.600" placeholder="Nome" />
-          <Input bg="gray.600" placeholder="E-mail" isDisabled />
+          <Controller
+            control={control}
+            name="name"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Nome"
+                onChangeText={onChange}
+                value={value}
+                error={errors?.name}
+              />
+            )}
+          />
+          <Controller
+            control={control}
+            name="email"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                isDisabled
+                placeholder="E-mail"
+                keyboardType="email-address"
+                autoCapitalize="none"
+                onChangeText={onChange}
+                value={value}
+                error={errors?.email}
+              />
+            )}
+          />
         </Center>
 
         <Center px={10} mt={12} mb={9}>
@@ -115,16 +222,54 @@ export function Profile() {
           >
             Alterar senha
           </Heading>
-
-          <Input bg="gray.600" placeholder="Senha antiga" secureTextEntry />
-          <Input bg="gray.600" placeholder="Nova senha" secureTextEntry />
-          <Input
-            bg="gray.600"
-            placeholder="Confirme a nova senha"
-            secureTextEntry
+          <Controller
+            control={control}
+            name="old_password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Senha antiga"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value || ''}
+                error={errors?.old_password}
+              />
+            )}
           />
 
-          <Button title="Atualizar" mt={4} />
+          <Controller
+            control={control}
+            name="password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Nova senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value || ''}
+                error={errors?.password}
+              />
+            )}
+          />
+
+          <Controller
+            control={control}
+            name="confirm_password"
+            render={({ field: { onChange, value } }) => (
+              <Input
+                placeholder="Confirme a nova senha"
+                secureTextEntry
+                onChangeText={onChange}
+                value={value || ''}
+                error={errors?.confirm_password}
+              />
+            )}
+          />
+
+          <Button
+            title="Atualizar"
+            mt={4}
+            isLoading={isLoading}
+            onPress={handleSubmit(handleUpdateProfile)}
+          />
         </Center>
       </ScrollView>
     </VStack>

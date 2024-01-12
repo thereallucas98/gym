@@ -18,6 +18,7 @@ import { AppError } from '~/utils/app-error'
 
 export type AuthContextDataProps = {
   user: UserDTO
+  updatedUserProfile: (user: UserDTO) => void
   signIn: (email: string, password: string) => void
   signOut: () => Promise<void>
   isLoadingUserStorageData: boolean
@@ -67,6 +68,15 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       })
     } finally {
       setIsLoadingUserStorageData(false)
+    }
+  }
+
+  async function updatedUserProfile(userUpdated: UserDTO) {
+    try {
+      setUser(userUpdated)
+      await storageUserSave(userUpdated)
+    } catch (error) {
+      console.log('error', error)
     }
   }
 
@@ -132,6 +142,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     <AuthContext.Provider
       value={{
         user,
+        updatedUserProfile,
         signIn,
         signOut,
         isLoadingUserStorageData,
