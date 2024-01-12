@@ -4,6 +4,7 @@ import { TouchableOpacity } from 'react-native'
 
 import DefaultUserPhotoIMG from '~/assets/userPhotoDefault.png'
 import { useAuth } from '~/hooks/use-auth'
+import { api } from '~/lib/axios'
 
 import { UserPhoto } from './user-photo'
 
@@ -22,7 +23,11 @@ export function HomeHeader() {
     >
       <UserPhoto
         alt={user?.name}
-        source={user?.avatar ? { uri: user?.avatar } : DefaultUserPhotoIMG}
+        source={
+          user.avatar
+            ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+            : DefaultUserPhotoIMG
+        }
         size={16}
         mr={4}
       />

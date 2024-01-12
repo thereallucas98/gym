@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { zodResolver } from '@hookform/resolvers/zod'
 import * as FileSystem from 'expo-file-system'
 import * as ImagePicker from 'expo-image-picker'
@@ -15,6 +16,7 @@ import { Controller, useForm } from 'react-hook-form'
 import { TouchableOpacity } from 'react-native'
 import { z } from 'zod'
 
+import DefaultUserPhotoIMG from '~/assets/userPhotoDefault.png'
 import { Button } from '~/components/button'
 import { Input } from '~/components/form/input'
 import { ScreenHeader } from '~/components/header/screen-header'
@@ -54,9 +56,6 @@ type ProfileInputs = z.infer<typeof profileSchema>
 
 export function Profile() {
   const [isLoading, setIsLoading] = useState(false)
-  const [userPhoto, setUserPhoto] = useState(
-    'https://github.com/thereallucas98.png',
-  )
 
   const { user, updatedUserProfile } = useAuth()
   const toast = useToast()
@@ -108,7 +107,39 @@ export function Profile() {
           }
         }
 
-        setUserPhoto(photoSelected.assets[0].uri)
+        const fileExtension = photoSelected.assets[0].uri.split('.').pop()
+
+        const photoFile = {
+          name: `${user.name}.${fileExtension}`.toLowerCase(),
+          uri: photoSelected.assets[0].uri,
+          type: `${photoSelected.assets[0].type}/${fileExtension}`,
+        } as any
+
+        const userPhotoUploadForm = new FormData()
+
+        userPhotoUploadForm.append('avatar', photoFile)
+
+        const avatarUpdtedResponse = await api.patch(
+          '/users/avatar',
+          userPhotoUploadForm,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        )
+
+        const userUpdated = user
+
+        userUpdated.avatar = avatarUpdtedResponse.data.avatar
+
+        updatedUserProfile(userUpdated)
+
+        toast.show({
+          title: 'Foto atualizada!',
+          placement: 'top',
+          bgColor: 'green.500',
+        })
       }
     } catch (error) {
       console.log(error)
@@ -166,7 +197,11 @@ export function Profile() {
             />
           ) : (
             <UserPhoto
-              source={{ uri: userPhoto }}
+              source={
+                user.avatar
+                  ? { uri: `${api.defaults.baseURL}/avatar/${user.avatar}` }
+                  : DefaultUserPhotoIMG
+              }
               alt="David Lucas"
               size={PHOTO_SIZE}
             />
