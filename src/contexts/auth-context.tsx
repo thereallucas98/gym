@@ -1,8 +1,14 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useToast } from 'native-base'
 import { createContext, ReactNode, useEffect, useState } from 'react'
 
 import { UserDTO } from '~/dtos/user-dto'
 import { api } from '~/lib/axios'
+import {
+  storageDeleteAuthToken,
+  storageGetAuthToken,
+  storageSaveAuthToken,
+} from '~/storage/storage-auth-token'
 import {
   storageRemoveUser,
   storageUserGet,
@@ -36,13 +42,41 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
   const toast = useToast()
 
+  async function updateUserAndToken(userData: UserDTO, token: string) {
+    api.defaults.headers.common.Authorization = `Bearer ${token}`
+
+    setUser(userData)
+  }
+
+  async function storageUserAndToken(userData: UserDTO, token: string) {
+    try {
+      setIsLoadingUserStorageData(true)
+
+      api.defaults.headers.common.Authorization = `Bearer ${token}`
+
+      await storageUserSave(userData)
+      await storageSaveAuthToken(token)
+    } catch (error) {
+      console.log('error', error)
+      toast.show({
+        title: 'Algo deu errado.',
+        description:
+          'Na tentativa de login ocorreu um erro. Tente novamente mais tarde',
+        placement: 'top',
+        bgColor: 'red.500',
+      })
+    } finally {
+      setIsLoadingUserStorageData(false)
+    }
+  }
+
   async function signIn(email: string, password: string) {
     try {
       const { data } = await api.post('/sessions', { email, password })
 
-      if (data.user) {
-        setUser(data.user)
-        storageUserSave(data.user)
+      if (data.user && data.token) {
+        await storageUserAndToken(data.user, data.token)
+        updateUserAndToken(data.user, data.token)
       }
     } catch (error) {
       const isAppError = error instanceof AppError
@@ -56,6 +90,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
         placement: 'top',
         bgColor: 'red.500',
       })
+    } finally {
+      setIsLoadingUserStorageData(false)
     }
   }
 
@@ -64,6 +100,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       setIsLoadingUserStorageData(true)
       setUser({} as UserDTO)
       await storageRemoveUser()
+      await storageDeleteAuthToken()
     } catch (error) {
       console.log('error', error)
     } finally {
@@ -73,10 +110,13 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
 
   async function loadUserData() {
     try {
-      const userLogged = await storageUserGet()
+      setIsLoadingUserStorageData(true)
 
-      if (userLogged) {
-        setUser(userLogged)
+      const userLogged = await storageUserGet()
+      const token = await storageGetAuthToken()
+
+      if (token && userLogged) {
+        updateUserAndToken(userLogged, token)
       }
     } catch (error) {
     } finally {
