@@ -1,3 +1,4 @@
+/* eslint-disable camelcase */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { useToast } from 'native-base'
 import { createContext, ReactNode, useEffect, useState } from 'react'
@@ -49,14 +50,18 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     setUser(userData)
   }
 
-  async function storageUserAndToken(userData: UserDTO, token: string) {
+  async function storageUserAndToken(
+    userData: UserDTO,
+    token: string,
+    refresh_token: string,
+  ) {
     try {
       setIsLoadingUserStorageData(true)
 
       api.defaults.headers.common.Authorization = `Bearer ${token}`
 
       await storageUserSave(userData)
-      await storageSaveAuthToken(token)
+      await storageSaveAuthToken({ token, refresh_token })
     } catch (error) {
       console.log('error', error)
       toast.show({
@@ -84,8 +89,8 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
     try {
       const { data } = await api.post('/sessions', { email, password })
 
-      if (data.user && data.token) {
-        await storageUserAndToken(data.user, data.token)
+      if (data.user && data.token && data.refresh_token) {
+        await storageUserAndToken(data.user, data.token, data.refresh_token)
         updateUserAndToken(data.user, data.token)
       }
     } catch (error) {
@@ -123,7 +128,7 @@ export function AuthContextProvider({ children }: AuthContextProviderProps) {
       setIsLoadingUserStorageData(true)
 
       const userLogged = await storageUserGet()
-      const token = await storageGetAuthToken()
+      const { token } = await storageGetAuthToken()
 
       if (token && userLogged) {
         updateUserAndToken(userLogged, token)
