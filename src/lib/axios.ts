@@ -1,9 +1,13 @@
+/* eslint-disable no-async-promise-executor */
 /* eslint-disable prefer-const */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable camelcase */
 import axios, { AxiosError, AxiosInstance } from 'axios'
 
-import { storageGetAuthToken } from '~/storage/storage-auth-token'
+import {
+  storageGetAuthToken,
+  storageSaveAuthToken,
+} from '~/storage/storage-auth-token'
 import { AppError } from '~/utils/app-error'
 
 type SignOut = () => void
@@ -60,6 +64,48 @@ api.registerInterceptTokenManager = (signOut) => {
           }
 
           isRefreshing = true
+
+          return new Promise(async (resolve, reject) => {
+            try {
+              const { data } = await api.post('/sessions/refresh_token', {
+                refresh_token,
+              })
+
+              await storageSaveAuthToken({
+                token: data.token,
+                refresh_token: data.refresh_token,
+              })
+
+              if (originalRequestConfig.data) {
+                originalRequestConfig.data = JSON.parse(
+                  originalRequestConfig.data,
+                )
+              }
+
+              originalRequestConfig.headers = {
+                Authorization: `Bearer ${data.token}`,
+              }
+              api.defaults.headers.common.Authorization = `Bearer ${data.token}`
+
+              failedQueued.forEach((request) => {
+                request.onSuccess(data.token)
+              })
+
+              console.log('TOKEN ATUALIZADO')
+
+              resolve(api(originalRequestConfig))
+            } catch (error: any) {
+              failedQueued.forEach((request) => {
+                request.onFailure(error)
+              })
+
+              signOut()
+              reject(error)
+            } finally {
+              isRefreshing = false
+              failedQueued = []
+            }
+          })
         }
 
         signOut()
